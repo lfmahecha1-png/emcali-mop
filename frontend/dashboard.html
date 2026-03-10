@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EMCALI MOP — Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23002060'/><text x='50%' y='60%' font-size='18' text-anchor='middle' fill='white' font-weight='bold'>E</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/styles.css" rel="stylesheet">
+</head>
+<body>
+<div id="sidebar-mount"></div>
+<div class="app-wrapper">
+  <div class="main-content">
+    <div id="topbar-mount"></div>
+    <div class="page-content">
+
+      <!-- KPI Row -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="kpi-card position-relative" style="border-color:var(--mp01);">
+            <div class="kpi-value text-primary" id="kpiMP">—</div>
+            <div class="kpi-label">Macroprocesos</div>
+            <i class="bi bi-diagram-3 kpi-icon text-primary"></i>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi-card position-relative" style="border-color:var(--mp02);">
+            <div class="kpi-value" style="color:var(--mp02);" id="kpiP">—</div>
+            <div class="kpi-label">Procesos</div>
+            <i class="bi bi-bezier2 kpi-icon" style="color:var(--mp02);"></i>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi-card position-relative" style="border-color:var(--mp03);">
+            <div class="kpi-value" style="color:var(--mp03);" id="kpiA">—</div>
+            <div class="kpi-label">Actividades</div>
+            <i class="bi bi-list-task kpi-icon" style="color:var(--mp03);"></i>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi-card position-relative" style="border-color:#ff3d00;">
+            <div class="kpi-value text-danger" id="kpiCrit">—</div>
+            <div class="kpi-label">Actividades <span class="badge-critica">⚡ URGENTE</span></div>
+            <i class="bi bi-exclamation-triangle kpi-icon text-danger"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alertas críticas -->
+      <div id="alertasCriticas" class="alert alert-danger border-danger d-none mb-4" role="alert">
+        <div class="d-flex align-items-start gap-2">
+          <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 flex-shrink-0"></i>
+          <div>
+            <div class="fw-bold mb-1">⚡ Actividades Urgentes — Requieren Atención Inmediata</div>
+            <div id="listaAlertasCriticas" class="small"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <!-- Distribución por Macroproceso -->
+        <div class="col-md-5">
+          <div class="chart-card">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2"></i>Actividades por Macroproceso</h6>
+            <canvas id="chartMP" height="220"></canvas>
+          </div>
+        </div>
+
+        <!-- Tabla resumen por MP -->
+        <div class="col-md-7">
+          <div class="chart-card">
+            <h6 class="fw-bold mb-3"><i class="bi bi-table me-2"></i>Resumen por Macroproceso</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Macroproceso</th>
+                    <th class="text-center">Procesos</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="resumenMPTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de actividades críticas -->
+        <div class="col-12">
+          <div class="chart-card">
+            <h6 class="fw-bold mb-3 text-danger">
+              <i class="bi bi-lightning-charge-fill me-2"></i>
+              Actividades Críticas ⚡ — Acción Urgente Requerida
+            </h6>
+            <div id="criticasList" class="row g-2"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /app-wrapper -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/layout.js"></script>
+<script>
+  if (!Api.requireAuth()) throw new Error('Not logged in');
+  renderLayout('dashboard', 'Dashboard — Modelo Operativo de Procesos');
+
+  const MP_COLORS = {
+    MP01: '#1A237E', MP02: '#004D40', MP03: '#BF360C', MP04: '#4A148C', MP05: '#1B5E20'
+  };
+
+  async function loadDashboard() {
+    showLoading();
+    try {
+      const [dashData, actCriticas] = await Promise.all([
+        Api.dashboard(),
+        Api.actividades({ critica: true })
+      ]);
+
+      // KPIs
+      const t = dashData.totales;
+      animateNumber('kpiMP',   t.macroprocesos || 0);
+      animateNumber('kpiP',    t.procesos      || 0);
+      animateNumber('kpiA',    t.actividades   || 0);
+      animateNumber('kpiCrit', t.criticas      || 0);
+
+      // Alert block
+      if (t.criticas > 0) {
+        document.getElementById('alertasCriticas').classList.remove('d-none');
+      }
+
+      // Chart
+      const mpData = dashData.por_macroproceso || [];
+      new Chart(document.getElementById('chartMP'), {
+        type: 'doughnut',
+        data: {
+          labels: mpData.map(m => m.codigo),
+          datasets: [{
+            data: mpData.map(m => m.procesos?.[0]?.count || 0),
+            backgroundColor: mpData.map(m => MP_COLORS[m.codigo] || '#999'),
+            borderWidth: 2, borderColor: 'white'
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+        }
+      });
+
+      // Resumen tabla
+      const tbody = document.getElementById('resumenMPTable');
+      tbody.innerHTML = mpData.map(m => `
+        <tr>
+          <td>
+            <span class="mp-badge mp-${m.codigo}">${m.codigo}</span>
+            <span class="ms-2 small">${m.nombre}</span>
+          </td>
+          <td class="text-center"><span class="badge bg-secondary">${m.procesos?.[0]?.count || 0}</span></td>
+          <td class="text-end">
+            <a href="mop.html?mp=${m.codigo}" class="btn btn-sm btn-outline-primary py-0" style="font-size:0.72rem;">
+              <i class="bi bi-arrow-right-circle me-1"></i>Ver
+            </a>
+          </td>
+        </tr>
+      `).join('');
+
+      // Actividades críticas cards
+      const criticas = actCriticas?.data || [];
+      const listEl = document.getElementById('criticasList');
+      if (criticas.length === 0) {
+        listEl.innerHTML = '<div class="col-12 text-muted small">No hay actividades críticas registradas.</div>';
+      } else {
+        listEl.innerHTML = criticas.map(a => `
+          <div class="col-md-6">
+            <div class="card border-danger h-100">
+              <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-start">
+                  <span class="mp-badge mp-${a.mp_codigo}">${a.mp_codigo}</span>
+                  <span class="badge-critica">⚡ URGENTE</span>
+                </div>
+                <div class="fw-bold small mt-1">${a.act_codigo}</div>
+                <div class="text-muted" style="font-size:0.78rem;line-height:1.4;">${(a.act_descripcion || '').substring(0, 90)}...</div>
+                ${a.nota_critica ? `<div class="mt-1 small text-danger"><i class="bi bi-alarm me-1"></i>${a.nota_critica.substring(0,100)}...</div>` : ''}
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Lista de alertas críticas en la alerta superior
+      if (criticas.length > 0) {
+        document.getElementById('listaAlertasCriticas').innerHTML =
+          criticas.map(a => `<div>• <strong>${a.act_codigo}</strong>: ${(a.act_descripcion||'').substring(0,80)}...</div>`).join('');
+      }
+
+    } catch (err) {
+      toast('Error al cargar el dashboard: ' + err.message, 'error');
+    } finally {
+      hideLoading();
+    }
+  }
+
+  function animateNumber(id, target) {
+    const el = document.getElementById(id);
+    let current = 0;
+    const step = Math.ceil(target / 20);
+    const interval = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current;
+      if (current >= target) clearInterval(interval);
+    }, 50);
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

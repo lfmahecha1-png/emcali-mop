@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EMCALI MOP — Tabla de Procesos</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23002060'/><text x='50%' y='60%' font-size='18' text-anchor='middle' fill='white' font-weight='bold'>E</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/styles.css" rel="stylesheet">
+</head>
+<body>
+<div id="sidebar-mount"></div>
+<div class="app-wrapper">
+  <div class="main-content">
+    <div id="topbar-mount"></div>
+    <div class="page-content">
+
+      <!-- Table Card -->
+      <div class="mop-table-wrapper">
+
+        <!-- Controls Bar -->
+        <div class="mop-table-controls">
+          <div class="row g-2 align-items-end">
+            <!-- Search -->
+            <div class="col-md-3">
+              <label class="form-label small fw-semibold mb-1">Buscar</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="searchInput"
+                       placeholder="Código, descripción, responsable...">
+                <button class="btn btn-outline-secondary" id="clearSearch" title="Limpiar">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+            <!-- Filter MP -->
+            <div class="col-md-2">
+              <label class="form-label small fw-semibold mb-1">Macroproceso</label>
+              <select class="form-select form-select-sm" id="filterMP">
+                <option value="">Todos</option>
+                <option value="MP01">MP01 – Estrategia</option>
+                <option value="MP02">MP02 – Acueducto</option>
+                <option value="MP03">MP03 – Energía</option>
+                <option value="MP04">MP04 – TIC</option>
+                <option value="MP05">MP05 – Soporte</option>
+              </select>
+            </div>
+            <!-- Filter Crítica -->
+            <div class="col-md-2">
+              <label class="form-label small fw-semibold mb-1">Estado</label>
+              <select class="form-select form-select-sm" id="filterCritica">
+                <option value="">Todas</option>
+                <option value="true">⚡ Críticas</option>
+                <option value="false">No críticas</option>
+              </select>
+            </div>
+            <!-- Actions -->
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold mb-1">Acciones</label>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm btn-outline-success" onclick="exportarCSV()">
+                  <i class="bi bi-filetype-csv me-1"></i>CSV
+                </button>
+                <button class="btn btn-sm btn-outline-info" onclick="exportarJSON()">
+                  <i class="bi bi-download me-1"></i>JSON
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="imprimirPDF()">
+                  <i class="bi bi-printer me-1"></i>Imprimir/PDF
+                </button>
+                <button class="btn btn-sm btn-primary" id="btnNuevaActividad" onclick="window.location.href='editar_actividad.html'">
+                  <i class="bi bi-plus-circle me-1"></i>Nueva
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Count badge -->
+          <div class="mt-2 d-flex align-items-center gap-2">
+            <span class="badge bg-secondary" id="countBadge">— registros</span>
+            <span class="text-muted small" id="filterInfo"></span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container" id="tableContainer">
+          <table id="mopTable">
+            <thead>
+              <tr>
+                <th class="th-mp" rowspan="1">MACROPROCESO</th>
+                <th class="th-proc" colspan="5">PROCESO</th>
+                <th class="th-sp" colspan="5">SUBPROCESO</th>
+                <th class="th-act" colspan="7">ACTIVIDADES</th>
+                <th class="th-area" colspan="4">ÁREA FUNCIONAL</th>
+                <th class="th-func" colspan="3">FUNCIONARIO</th>
+              </tr>
+              <tr>
+                <!-- MP -->
+                <th class="th-mp" style="cursor:pointer;" onclick="sortTable('mp_codigo')">Código <i class="bi bi-arrow-down-up"></i></th>
+                <!-- Proceso -->
+                <th class="th-proc" onclick="sortTable('proc_codigo')" style="cursor:pointer;">Código <i class="bi bi-arrow-down-up"></i></th>
+                <th class="th-proc">Descripción</th>
+                <th class="th-proc">Alcance</th>
+                <th class="th-proc">Indicador</th>
+                <th class="th-proc">Responsable</th>
+                <!-- Subproceso -->
+                <th class="th-sp" onclick="sortTable('sp_codigo')" style="cursor:pointer;">Código <i class="bi bi-arrow-down-up"></i></th>
+                <th class="th-sp">Descripción</th>
+                <th class="th-sp">Alcance</th>
+                <th class="th-sp">Indicador</th>
+                <th class="th-sp">Responsable</th>
+                <!-- Actividad -->
+                <th class="th-act" onclick="sortTable('act_codigo')" style="cursor:pointer;">Código <i class="bi bi-arrow-down-up"></i></th>
+                <th class="th-act">Descripción</th>
+                <th class="th-act">Alcance</th>
+                <th class="th-act">Indicador</th>
+                <th class="th-act">Responsable</th>
+                <th class="th-act">Producto</th>
+                <th class="th-act">Habilitador para los Negocios</th>
+                <!-- Área Funcional -->
+                <th class="th-area">Nombre Área</th>
+                <th class="th-area">Responsabilidades</th>
+                <th class="th-area">KPI Desempeño</th>
+                <th class="th-area">KPI Productividad</th>
+                <!-- Funcionario -->
+                <th class="th-func">Funciones</th>
+                <th class="th-func">KPI Desempeño</th>
+                <th class="th-func">KPI Productividad</th>
+              </tr>
+            </thead>
+            <tbody id="mopTableBody">
+              <tr><td colspan="25" class="text-center py-4 text-muted">
+                <div class="spinner-border spinner-border-sm me-2"></div>Cargando datos...
+              </td></tr>
+            </tbody>
+          </table>
+        </div><!-- /table-container -->
+      </div><!-- /mop-table-wrapper -->
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver / Editar Actividad -->
+<div class="modal fade" id="actModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="actModalTitle">Detalle de Actividad</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="actModalBody">Cargando...</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-warning" id="btnEditarModal">
+          <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+        <button type="button" class="btn btn-danger" id="btnEliminarModal">
+          <i class="bi bi-trash me-1"></i>Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/layout.js"></script>
+<script>
+  if (!Api.requireAuth()) throw new Error('Not logged in');
+  renderLayout('mop', 'Tabla MOP — 39 Actividades');
+
+  // Show/hide edit buttons based on role
+  const user = Api.getUser();
+  if (user.rol === 'consulta') {
+    document.getElementById('btnNuevaActividad').style.display = 'none';
+  }
+
+  let allData = [];
+  let sortField = 'mp_codigo';
+  let sortDir = 'asc';
+
+  // Read URL params for initial filter
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('mp')) {
+    document.getElementById('filterMP').value = urlParams.get('mp');
+  }
+
+  // ── LOAD DATA ────────────────────────────────────────────
+  async function loadMOP() {
+    const mp      = document.getElementById('filterMP').value;
+    const critica = document.getElementById('filterCritica').value;
+    const buscar  = document.getElementById('searchInput').value.trim();
+    const params  = {};
+    if (mp)      params.macroproceso = mp;
+    if (critica) params.critica = critica;
+    if (buscar)  params.buscar = buscar;
+
+    try {
+      const res = await Api.actividades(params);
+      allData = res.data || [];
+      renderTable(allData);
+      document.getElementById('countBadge').textContent = `${allData.length} registros`;
+      const filters = [];
+      if (mp) filters.push(mp);
+      if (critica === 'true') filters.push('Sólo críticas');
+      if (buscar) filters.push(`"${buscar}"`);
+      document.getElementById('filterInfo').textContent = filters.length ? 'Filtros: ' + filters.join(', ') : '';
+    } catch (err) {
+      document.getElementById('mopTableBody').innerHTML =
+        `<tr><td colspan="25" class="text-center text-danger py-3">
+          <i class="bi bi-exclamation-triangle me-2"></i>${err.message}
+        </td></tr>`;
+      toast('Error al cargar datos: ' + err.message, 'error');
+    }
+  }
+
+  // ── RENDER TABLE ────────────────────────────────────────
+  function renderTable(data) {
+    const tbody = document.getElementById('mopTableBody');
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="25" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No se encontraron registros.</td></tr>';
+      return;
+    }
+
+    const mp_colors = { MP01:'#1A237E', MP02:'#004D40', MP03:'#BF360C', MP04:'#4A148C', MP05:'#1B5E20' };
+
+    tbody.innerHTML = data.map(r => {
+      const critica = r.es_critica ? '<span class="badge-critica ms-1">⚡</span>' : '';
+      const mpColor = mp_colors[r.mp_codigo] || '#333';
+      return `
+        <tr style="cursor:pointer;" onclick="verActividad(${r.act_id})">
+          <td class="col-mp">
+            <span class="mp-badge mp-${r.mp_codigo}">${r.mp_codigo}</span>
+            <div class="small text-muted mt-1" style="font-size:0.7rem;">${(r.mp_nombre||'').substring(0,25)}</div>
+          </td>
+          <td class="col-proc"><code style="font-size:0.72rem;">${r.proc_codigo||''}</code></td>
+          <td class="col-proc"><div class="text-wrap" style="min-width:140px;font-size:0.78rem;">${(r.proc_descripcion||'').substring(0,80)}${r.proc_descripcion?.length>80?'…':''}</div></td>
+          <td class="col-proc"><div style="min-width:120px;font-size:0.75rem;color:#555;">${formatAlcance(r.proc_alcance)}</div></td>
+          <td class="col-proc"><div style="min-width:120px;font-size:0.75rem;">${(r.proc_indicador||'').substring(0,60)}${r.proc_indicador?.length>60?'…':''}</div></td>
+          <td class="col-proc"><div style="font-size:0.75rem;min-width:100px;">${r.proc_responsable||''}</div></td>
+          <td class="col-sp"><code style="font-size:0.72rem;">${r.sp_codigo||''}</code></td>
+          <td class="col-sp"><div style="min-width:140px;font-size:0.78rem;">${(r.sp_descripcion||'').substring(0,80)}${r.sp_descripcion?.length>80?'…':''}</div></td>
+          <td class="col-sp"><div style="min-width:120px;font-size:0.75rem;color:#555;">${formatAlcance(r.sp_alcance)}</div></td>
+          <td class="col-sp"><div style="min-width:120px;font-size:0.75rem;">${(r.sp_indicador||'').substring(0,60)}${r.sp_indicador?.length>60?'…':''}</div></td>
+          <td class="col-sp"><div style="font-size:0.75rem;min-width:100px;">${r.sp_responsable||''}</div></td>
+          <td class="col-act fw-bold"><code style="font-size:0.72rem;">${r.act_codigo||''}${critica}</code></td>
+          <td class="col-act"><div style="min-width:160px;font-size:0.78rem;">${(r.act_descripcion||'').substring(0,100)}${r.act_descripcion?.length>100?'…':''}</div></td>
+          <td class="col-act"><div style="min-width:120px;font-size:0.75rem;color:#555;">${formatAlcance(r.act_alcance)}</div></td>
+          <td class="col-act"><div style="min-width:120px;font-size:0.75rem;">${(r.act_indicador||'').substring(0,70)}${r.act_indicador?.length>70?'…':''}</div></td>
+          <td class="col-act"><div style="font-size:0.75rem;min-width:100px;">${r.act_responsable||''}</div></td>
+          <td class="col-act"><div style="min-width:120px;font-size:0.75rem;">${(r.act_producto||'').substring(0,80)}${r.act_producto?.length>80?'…':''}</div></td>
+          <td class="col-act" style="background:rgba(0,120,130,0.04);">
+            <div style="min-width:150px;font-size:0.75rem;color:#005c5c;font-style:italic;">${(r.habilitador_negocio||'').substring(0,100)}${r.habilitador_negocio?.length>100?'…':''}</div>
+          </td>
+          <td class="col-area fw-semibold"><div style="min-width:120px;font-size:0.78rem;">${r.area_nombre||'—'}</div></td>
+          <td class="col-area"><div style="min-width:130px;font-size:0.75rem;">${(r.area_responsabilidades||'').substring(0,80)}${r.area_responsabilidades?.length>80?'…':''}</div></td>
+          <td class="col-area"><div style="min-width:120px;font-size:0.75rem;">${(r.area_kpi_desempeno||'').substring(0,70)}${r.area_kpi_desempeno?.length>70?'…':''}</div></td>
+          <td class="col-area"><div style="min-width:120px;font-size:0.75rem;">${(r.area_kpi_productividad||'').substring(0,70)}${r.area_kpi_productividad?.length>70?'…':''}</div></td>
+          <td class="col-func"><div style="min-width:130px;font-size:0.75rem;">${(r.func_funciones||'').substring(0,100)}${r.func_funciones?.length>100?'…':''}</div></td>
+          <td class="col-func"><div style="min-width:120px;font-size:0.75rem;">${(r.func_kpi_desempeno||'').substring(0,70)}${r.func_kpi_desempeno?.length>70?'…':''}</div></td>
+          <td class="col-func"><div style="min-width:120px;font-size:0.75rem;">${(r.func_kpi_productividad||'').substring(0,70)}${r.func_kpi_productividad?.length>70?'…':''}</div></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function formatAlcance(txt) {
+    if (!txt) return '';
+    return txt.replace(/INICIA:/g, '<span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.65rem;">INICIA</span> ')
+              .replace(/INCLUYE:/g, '<span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:0.65rem;">INCLUYE</span> ')
+              .replace(/TERMINA:/g, '<span class="badge bg-warning bg-opacity-10 text-warning" style="font-size:0.65rem;">TERMINA</span> ')
+              .substring(0, 150);
+  }
+
+  // ── SORT ─────────────────────────────────────────────────
+  function sortTable(field) {
+    if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortField = field; sortDir = 'asc'; }
+    const sorted = [...allData].sort((a, b) => {
+      const va = (a[field] || '').toString().toLowerCase();
+      const vb = (b[field] || '').toString().toLowerCase();
+      return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    renderTable(sorted);
+  }
+
+  // ── VIEW DETAIL MODAL ────────────────────────────────────
+  let currentActId = null;
+  async function verActividad(id) {
+    currentActId = id;
+    const modalEl = document.getElementById('actModal');
+    const modal = new bootstrap.Modal(modalEl);
+    document.getElementById('actModalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border"></div></div>';
+    modal.show();
+    try {
+      const a = await Api.actividad(id);
+      const sp = a.subprocesos || {};
+      const p  = sp.procesos   || {};
+      const mp = p.macroprocesos || {};
+      const af = a.areas_funcionales?.[0] || {};
+      const fp = a.funcionarios_proceso?.[0] || {};
+
+      document.getElementById('actModalTitle').innerHTML =
+        `<span class="mp-badge mp-${mp.codigo} me-2">${mp.codigo||''}</span> ${a.codigo} ${a.es_critica ? '<span class="badge-critica">⚡ URGENTE</span>' : ''}`;
+
+      document.getElementById('actModalBody').innerHTML = `
+        ${a.es_critica ? `<div class="alert alert-danger py-2 mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i><strong>ACTIVIDAD CRÍTICA:</strong> ${a.nota_critica||''}</div>` : ''}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="form-section" style="border-color:var(--mp01);">
+              <div class="form-section-title" style="color:var(--mp01);">Proceso / Subproceso</div>
+              <div class="small"><strong>MP:</strong> ${mp.codigo} — ${mp.nombre}</div>
+              <div class="small"><strong>Proceso:</strong> ${p.codigo} — ${p.descripcion||''}</div>
+              <div class="small"><strong>Subproceso:</strong> ${sp.codigo} — ${sp.descripcion||''}</div>
+            </div>
+            <div class="form-section" style="border-color:var(--mp02);">
+              <div class="form-section-title" style="color:var(--mp02);">Actividad</div>
+              <div class="small"><strong>Código:</strong> ${a.codigo}</div>
+              <div class="small"><strong>Descripción:</strong> ${a.descripcion||''}</div>
+              <div class="small mt-1"><strong>Alcance:</strong></div>
+              <div class="small text-muted">${(a.alcance||'').replace(/INICIA:/g,'<br><b>INICIA:</b>').replace(/INCLUYE:/g,'<br><b>INCLUYE:</b>').replace(/TERMINA:/g,'<br><b>TERMINA:</b>')}</div>
+            </div>
+            <div class="form-section" style="border-color:var(--mp03);">
+              <div class="form-section-title" style="color:var(--mp03);">KPI e Indicadores</div>
+              <div class="small">${(a.indicador||'').replace(/\n/g,'<br>')}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-section" style="border-color:var(--mp04);">
+              <div class="form-section-title" style="color:var(--mp04);">Área Funcional</div>
+              <div class="small"><strong>Área:</strong> ${af.nombre||'—'}</div>
+              <div class="small"><strong>Responsabilidades:</strong> ${af.responsabilidades||'—'}</div>
+              <div class="small"><strong>KPI Desempeño:</strong> ${af.kpi_desempeno||'—'}</div>
+              <div class="small"><strong>KPI Productividad:</strong> ${af.kpi_productividad||'—'}</div>
+            </div>
+            <div class="form-section" style="border-color:var(--mp05);">
+              <div class="form-section-title" style="color:var(--mp05);">Funcionario</div>
+              <div class="small"><strong>Funciones:</strong> ${fp.funciones||'—'}</div>
+              <div class="small"><strong>KPI Desempeño:</strong> ${fp.kpi_desempeno||'—'}</div>
+              <div class="small"><strong>KPI Productividad:</strong> ${fp.kpi_productividad||'—'}</div>
+            </div>
+            <div class="form-section" style="border-color:var(--emcali-teal);">
+              <div class="form-section-title" style="color:var(--emcali-teal);">Habilitador para los Negocios</div>
+              <div class="small" style="color:#005c5c;font-style:italic;">${a.habilitador_negocio||'—'}</div>
+              <div class="mt-2 small"><strong>Producto:</strong> ${a.producto||'—'}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Show/hide edit/delete based on role
+      const canEdit = ['administrador','gestor'].includes(user.rol);
+      document.getElementById('btnEditarModal').style.display  = canEdit ? '' : 'none';
+      document.getElementById('btnEliminarModal').style.display = user.rol === 'administrador' ? '' : 'none';
+
+      document.getElementById('btnEditarModal').onclick = () => {
+        window.location.href = `editar_actividad.html?id=${id}`;
+      };
+      document.getElementById('btnEliminarModal').onclick = () => eliminarActividad(id, modal);
+
+    } catch (err) {
+      document.getElementById('actModalBody').innerHTML = `<div class="text-danger">Error: ${err.message}</div>`;
+    }
+  }
+
+  async function eliminarActividad(id, modal) {
+    if (!confirm('¿Está seguro que desea eliminar esta actividad?')) return;
+    try {
+      await Api.eliminarActividad(id);
+      modal.hide();
+      toast('Actividad eliminada correctamente.', 'success');
+      loadMOP();
+    } catch (err) {
+      toast('Error al eliminar: ' + err.message, 'error');
+    }
+  }
+
+  // ── EXPORT ────────────────────────────────────────────────
+  function exportarCSV() {
+    const mp = document.getElementById('filterMP').value;
+    Api.exportCSV(mp);
+    toast('Descargando CSV...', 'info');
+  }
+  function exportarJSON() {
+    const mp = document.getElementById('filterMP').value;
+    Api.exportJSON(mp);
+    toast('Descargando JSON...', 'info');
+  }
+  function imprimirPDF() {
+    window.print();
+  }
+
+  // ── EVENT LISTENERS ───────────────────────────────────────
+  let searchTimer;
+  document.getElementById('searchInput').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadMOP, 400);
+  });
+  document.getElementById('clearSearch').addEventListener('click', () => {
+    document.getElementById('searchInput').value = '';
+    loadMOP();
+  });
+  document.getElementById('filterMP').addEventListener('change', loadMOP);
+  document.getElementById('filterCritica').addEventListener('change', loadMOP);
+
+  // Initial load
+  loadMOP();
+</script>
+</body>
+</html>
