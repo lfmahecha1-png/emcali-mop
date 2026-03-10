@@ -3,7 +3,7 @@
  * Centraliza todas las llamadas al backend
  */
 
-const API_BASE = window.location.origin + 'https://emcali-mop-production.up.railway.app/api';
+const API_BASE = 'https://emcali-mop-production.up.railway.app/api';
 
 const Api = {
   // ── AUTH ─────────────────────────────────────────────────
@@ -110,7 +110,6 @@ const Api = {
     const token = Api.getToken();
     const mp = macroproceso ? `?macroproceso=${macroproceso}` : '';
     const url = `${API_BASE}/export/csv${mp}`;
-    // Usar fetch con token para descargar
     fetch(url, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.blob())
       .then(blob => {
