@@ -18,7 +18,6 @@ router.post('/login',
     }
     const { email, password } = req.body;
     try {
-      // Obtener usuario con su rol
       const { data: users, error } = await supabase
         .from('usuarios')
         .select('id, nombre, email, password_hash, activo, roles(nombre)')
@@ -62,8 +61,8 @@ router.get('/me', authenticate, (req, res) => {
   res.json({ user: req.user });
 });
 
-// ── POST /api/auth/init-admin (solo primera vez) ────────────
-router.post('/init-admin', async (req, res) => {
+// ── GET /api/auth/init-admin (solo primera vez) ─────────────
+router.get('/init-admin', async (req, res) => {
   try {
     const { data: existing } = await supabase
       .from('usuarios').select('id').limit(1);
