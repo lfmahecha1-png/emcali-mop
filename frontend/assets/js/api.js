@@ -3,7 +3,7 @@
  * Centraliza todas las llamadas al backend
  */
 
-const API_BASE = window.location.origin + '/api';
+const API_BASE = window.location.origin + 'https://emcali-mop-production.up.railway.app/api';
 
 const Api = {
   // ── AUTH ─────────────────────────────────────────────────
