@@ -64,7 +64,9 @@
         <div class="col-md-5">
           <div class="chart-card">
             <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2"></i>Actividades por Macroproceso</h6>
-            <canvas id="chartMP" height="220"></canvas>
+            <div style="position:relative; height:220px;">
+              <canvas id="chartMP"></canvas>
+            </div>
           </div>
         </div>
 
@@ -148,7 +150,8 @@
           }]
         },
         options: {
-          responsive: true, maintainAspectRatio: false,
+          responsive: true,
+          maintainAspectRatio: false,
           plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
         }
       });
